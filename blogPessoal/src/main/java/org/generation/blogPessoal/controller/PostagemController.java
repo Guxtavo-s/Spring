@@ -6,6 +6,7 @@ import javax.validation.Valid;
 
 import org.generation.blogPessoal.model.Postagem;
 import org.generation.blogPessoal.repository.PostagemRepository;
+import org.generation.blogPessoal.repository.TemaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,8 @@ public class PostagemController {
 	@Autowired
 	private PostagemRepository postagemrepository;
 	
+	private TemaRepository temaRepository;
+	
 	@GetMapping
 	public ResponseEntity<List<Postagem>> getAll(){
 		return ResponseEntity.ok(postagemrepository.findAll());
@@ -42,13 +45,29 @@ public class PostagemController {
 		return ResponseEntity.ok(postagemrepository.findAllByTituloContainingIgnoreCase(titulo));
 	}
 	
-	@PostMapping 
-	public ResponseEntity<Postagem>post(@Valid @RequestBody Postagem postagem) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(postagemrepository.save(postagem));
+	@PostMapping
+	public ResponseEntity<Postagem> post(@Valid @RequestBody Postagem postagem){
+		if (temaRepository.existsById(postagem.getTema().getId()))
+			return ResponseEntity.status(HttpStatus.CREATED)
+					.body(postagemrepository.save(postagem));
+			
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 	}
-	@PutMapping 
-	public ResponseEntity<Postagem>put(@Valid @RequestBody Postagem postagem) {
-		return ResponseEntity.status(HttpStatus.OK).body(postagemrepository.save(postagem));
+	
+	@PutMapping
+	public ResponseEntity<Postagem> put(@Valid @RequestBody Postagem postagem){
+		if (postagemrepository.existsById(postagem.getId())){
+			
+			if (temaRepository.existsById(postagem.getTema().getId()))
+				return ResponseEntity.status(HttpStatus.OK)
+						.body(postagemrepository.save(postagem));
+			
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			
+		}			
+			
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		
 	}
 	@DeleteMapping("/{id}")
 	public void delete(@PathVariable Long id) {
